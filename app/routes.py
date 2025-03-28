@@ -1,7 +1,7 @@
 from app import app, db, bcrypt
 from flask import render_template, redirect, flash, url_for, request
 from app.models import User, Subject, Chapter
-from app.forms import SubjectForm, ChapterForm
+from app.forms import SubjectForm, ChapterForm, RegistrationForm, LoginForm
 from flask_login import login_user, logout_user, login_required, LoginManager
 
 login_manager = LoginManager(app)
@@ -197,7 +197,29 @@ def user_login():
         user = User.query.filter_by(username=username).first()
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
+            flash(f'Welcome, {user.fullname}!', 'success')
             return redirect(url_for('user_dashboard'))
         else:
-            flash('Invalid credentials', 'danger')
+            flash('Invalid username or password. Please try again.', 'danger')
+            return redirect(url_for('user_login'))
     return render_template('user_login.html')
+
+
+'''@app.route('/user_login', methods=['GET', 'POST'])
+def user_login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and bcrypt.check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            flash(f'Welcome, {user.fullname}!', 'success')
+            return redirect(url_for('user_dashboard'))
+        else:
+            flash('Invalid username or password. Please try again.', 'danger')
+            return redirect(url_for('user_login'))
+
+    return render_template('user_login.html')'''
