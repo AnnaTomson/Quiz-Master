@@ -4,59 +4,38 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Registration - QuizVista</title>
+    <title>User Login - Quiz Master</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
 
 <body>
     <div class="container">
-        <h1>QuizVista</h1>
-        <h2>User Registration</h2>
+        <h1>Welcome to Quiz Master</h1>
+        <h2>User Login</h2>
 
-        <!-- Display error messages if any -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <!-- Display error message if any -->
+        {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+        {% endif %}
 
-        <!-- Registration Form -->
-        <form method="POST" action="{{ url_for('register') }}">
-            <label for="username">Username</label>
+        <!-- Login Form -->
+        <form method="POST" action="{{ url_for('user_login') }}">
+            <label for="username">Username or Email</label>
             <input type="text" id="username" name="username" required>
-
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
-
-            <label for="fullname">Full Name</label>
-            <input type="text" id="fullname" name="fullname" required>
-
-            <label for="qualification">Qualification</label>
-            <input type="text" id="qualification" name="qualification" required>
-
-            <label for="dob">Date of Birth</label>
-            <input type="date" id="dob" name="dob" required>
 
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
 
-            <label for="confirm_password">Confirm Password</label>    {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-            
-        <input type="password" id="confirm_password" name="confirm_password" required>
-
-            <button type="submit">Register</button>
+            <button type="submit">Login</button>
         </form>
 
-        <!-- Redirect to Login -->
-        <p>Already have an account? <a href="{{ url_for('user_login') }}">Login here</a></p>
+        <!-- Registration Option -->
+        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
     </div>
 
-
-    <!-- CSS Styling-->
+    <!-- CSS Styling (Optional) -->
     <style>
         body {
             font-family: Arial, sans-serif;

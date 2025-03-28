@@ -14,36 +14,39 @@ def load_user(user_id):
 
 # Admin login & Home page
 
-@app.route('/user/login', methods=['GET', 'POST'])
-def user_login():
-    return render_template('user/login.html')
-
 @app.route('/')
 def home():
     return render_template('index.html')
 
-@app.route('/admin-login', methods = ['GET', 'POST'])
+@app.route('/admin/login', methods = ['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
         username = request.form('username')
         password = request.form('password')
         user = User.query.filter_by(username=username, is_admin = True).first()
 
-        if user and bcrypt.check_password_hash(user.password, password):
+        if user and user.is_admin and bcrypt.check_password_hash(user.password, password):
             login_user(user)
             flash('Welcome Admin!!!', 'success')
             return redirect(url_for('admin_dashboard'))
         
         else:
             flash('Invalid details! Please Try Again', 'danger')
-    return render_template('admin/login.html')
+            return redirect(url_for('admin_login'))
+    return render_template('admin_login.html')
 
 #creating admin dashboard
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
-    return render_template('admin/dashboard.html')
+    if not current_user.is_admin:
+        flash('Unauthorised Access!', 'danger')
+        return redirect(url_for('admin_login'))
+    return render_template('admin_dashboard.html')
 
+
+@app.route('/admin/logout')
+@login_required
 def admin_logout():
     logout_user()
     flash('You\'ve been logged out...', 'success')
@@ -61,7 +64,7 @@ def view_subjects():
 #create new subject
 @app.route('/admin/subjects/new', methods=['GET', 'POST'])
 @login_required
-def edit_subject(id):
+def create_subject(id):
     subject = Subject.query.get_or_404(id)
     form = SubjectForm(obj=subject)
     if form.validate_on_submit():
@@ -153,27 +156,48 @@ def delete_chapter(id):
 def register():
     if request.method=='POST':
         username = request.form['username']
+        email=request.form['email']
         fullname = request.form['fullname']
+        qualification = request.form['qualification']
+        dob = request.form['dob']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
-        dob = request.form['dob']
-        qualification = request.form['qualification']
 
         if password != confirm_password:
             flash('Passwords do not match. Try Again!', 'danger')
             return redirect(url_for('register'))
 
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists. Try a different one!', 'warning')
+        elif User.query.filter_by(username=username).first():
+            flash('Username already exists. Try a different one!', 'danger')
             return redirect(url_for('register'))
+        
+        elif User.query.filter_by(email=email).first():
+            flash('Email is already registered! Please login', 'warning')
+            return redirect(url_for('user_login'))
 
-        hash_pswd = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, password=hash_pswd, fullname=fullname, dob=dob, qualification=qualification)
+        else:
+            hash_pswd = bcrypt.generate_password_hash(password).decode('utf-8')
+            new_user = User(username=username, email=email, password=hash_pswd, fullname=fullname, dob=dob, qualification=qualification)
 
-        db.session.add(new_user)
-        db.session.commit()
+            db.session.add(new_user)
+            db.session.commit()
 
-        flash('Registered successfully! Please Log in!!!', 'success')
-        return redirect(url_for('user_login'))
+            flash('Registered successfully! Please Log in!!!', 'success')
+            return redirect(url_for('user_login'))
 
     return render_template('register.html')
+
+
+#user login
+@app.route('/login', methods=['GET', 'POST'])
+def user_login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and bcrypt.check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('user_dashboard'))
+        else:
+            flash('Invalid credentials', 'danger')
+    return render_template('user_login.html')
