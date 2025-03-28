@@ -1,0 +1,7 @@
+<h2>{% if form.name.data %} Edit Subject {% else %} Create Subject {% endif %}</h2>
+<form method="post">
+  {{ form.hidden_tag() }}
+  <div>{{ form.name.label }} {{ form.name() }}</div>
+  <div>{{ form.description.label }} {{ form.description() }}</div>
+  <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
+</form>
