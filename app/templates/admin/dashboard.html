@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Welcome, Admin!</h2>
+    
+    <div class="row">
+        <!-- Manage Users -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Manage Users</h5>
+                    <p class="card-text">View, add, edit, or delete users.</p>
+                    <a href="{{ url_for('manage_users') }}" class="btn btn-primary">Manage Users</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Subjects -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Manage Subjects</h5>
+                    <p class="card-text">Create and manage subjects.</p>
+                    <a href="{{ url_for('manage_subjects') }}" class="btn btn-success">Manage Subjects</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Quizzes -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Manage Quizzes</h5>
+                    <p class="card-text">Create, edit, or delete quizzes.</p>
+                    <a href="{{ url_for('manage_quizzes') }}" class="btn btn-info">Manage Quizzes</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Reports -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">View Reports</h5>
+                    <p class="card-text">Check quiz results and user reports.</p>
+                    <a href="{{ url_for('view_reports') }}" class="btn btn-warning">View Reports</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout Button -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Logout</h5>
+                    <p class="card-text">Log out from your account.</p>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

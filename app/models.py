@@ -8,8 +8,8 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     fullname = db.Column(db.String(100), nullable=False)
-    #qualification = db.Column(db.String(100))
-    #dob = db.Column(db.Date)
+    qualification = db.Column(db.String(100))
+    dob = db.Column(db.Date)
     is_admin = db.Column(db.Boolean, default=False)
 
 class Subject(db.Model):
