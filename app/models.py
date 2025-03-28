@@ -1,6 +1,11 @@
 from app import db
 from datetime import datetime
 from flask_login import UserMixin  #for user authentication and sessions
+'''from flask_login import LoginManager
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))'''
 
 class User(db.Model, UserMixin):
     __tablename__ = 'user' 

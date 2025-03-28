@@ -42,7 +42,7 @@ def admin_dashboard():
     if not current_user.is_admin:
         flash('Unauthorised Access!', 'danger')
         return redirect(url_for('admin_login'))
-    return render_template('admin_dashboard.html')
+    return render_template('admin/dashboard.html')
 
 
 @app.route('/admin/logout')

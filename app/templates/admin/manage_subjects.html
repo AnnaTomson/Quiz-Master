@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Manage Subjects</h2>
+
+<!--add subject-->
+<form method="post" action="{{ url_for('add_subject') }}">
+  <label for="name">Subject Name:</label>
+  <input type="text" name="name" required>
+
+  <label for="description">Description:</label>
+  <textarea name="description"></textarea>
+
+  <button type="submit">Add Subject</button>
+</form>
+
+<hr>
+
+<!--get the studnt list-->
+<h3>All Subjects</h3>
+<table>
+  <tr>
+    <th>ID</th>
+    <th>Subject Name</th>
+    <th>Description</th>
+    <th>Actions</th>
+  </tr>
+  {% for subject in subjects %}
+  <tr>
+    <td>{{ subject.id }}</td>
+    <td>{{ subject.name }}</td>
+    <td>{{ subject.description }}</td>
+    <td>
+      <a href="{{ url_for('edit_subject', subject_id=subject.id) }}">Edit</a>
+      <a href="{{ url_for('delete_subject', subject_id=subject.id) }}" onclick="return confirm('Are you sure?')">Delete</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

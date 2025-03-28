@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center">Admin Dashboard</h2>
+
+  <!-- Admin Actions -->
+  <div class="row mt-4">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Manage Subjects</h5>
+          <p class="card-text">Create, edit, and delete subjects.</p>
+          <a href="{{ url_for('manage_subjects') }}" class="btn btn-primary">Go to Subjects</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Manage Chapters</h5>
+          <p class="card-text">Add, edit, and remove chapters.</p>
+          <a href="{{ url_for('manage_chapters') }}" class="btn btn-primary">Go to Chapters</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Manage Quizzes</h5>
+          <p class="card-text">Create, edit, and delete quizzes.</p>
+          <a href="{{ url_for('manage_quizzes') }}" class="btn btn-primary">Go to Quizzes</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- manage user &quiz -->
+  <div class="row mt-4">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Manage Users</h5>
+          <p class="card-text">Search, edit, and remove users.</p>
+          <a href="{{ url_for('manage_users') }}" class="btn btn-primary">Go to Users</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Quiz Analytics</h5>
+          <p class="card-text">View quiz performance and user attempts.</p>
+          <a href="{{ url_for('quiz_analytics') }}" class="btn btn-primary">View Analytics</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Summary Charts</h5>
+          <p class="card-text">View performance statistics.</p>
+          <a href="{{ url_for('admin_dashboard') }}#charts" class="btn btn-primary">View Charts</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- chart -->
+  <div class="mt-5" id="charts">
+    <h3 class="text-center">Quiz Performance Overview</h3>
+    <canvas id="quizChart"></canvas>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var ctx = document.getElementById("quizChart").getContext("2d");
+    var quizChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Math", "Science", "History", "English", "Computer Science"],
+        datasets: [{
+          label: "Number of Attempts",
+          data: [12, 19, 3, 5, 2],
+          backgroundColor: "rgba(54, 162, 235, 0.5)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  });
+</script>
+
+{% endblock %}

@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SubmitField, SelectField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+from app.models import User
 
 class SubjectForm(FlaskForm):
     name = StringField('Subject Name', validators=[DataRequired()])
@@ -12,3 +13,4 @@ class ChapterForm(FlaskForm):
     description = TextAreaField('Description')
     sub_id = SelectField('Subject', coerce=int)
     submit = SubmitField('Save')
+

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Manage Chapters</h2>
+
+<!-- select chapter-->
+<form method="get" action="{{ url_for('manage_chapters') }}">
+  <label for="subject">Select Subject:</label>
+  <select name="subject_id" onchange="this.form.submit()">
+    {% for subject in subjects %}
+      <option value="{{ subject.id }}" {% if subject.id == selected_subject_id %}selected{% endif %}>
+        {{ subject.id }} - {{ subject.name }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+<!--add chapter-->
+<form method="post" action="{{ url_for('add_chapter') }}">
+  <input type="hidden" name="subject_id" value="{{ selected_subject_id }}">
+  
+  <label for="name">Chapter Name:</label>
+  <input type="text" name="name" required>
+  
+  <label for="description">Description:</label>
+  <textarea name="description"></textarea>
+  
+  <button type="submit">Add Chapter</button>
+</form>
+
+<hr>
+
+<!--chapter list-->
+<h3>Chapters for {{ selected_subject.name }}</h3>
+<table>
+  <tr>
+    <th>ID</th>
+    <th>Chapter Name</th>
+    <th>Description</th>
+    <th>Actions</th>
+  </tr>
+  {% for chapter in chapters %}
+  <tr>
+    <td>{{ chapter.id }}</td>
+    <td>{{ chapter.name }}</td>
+    <td>{{ chapter.description }}</td>
+    <td>
+      <a href="{{ url_for('edit_chapter', chapter_id=chapter.id) }}">Edit</a>
+      <a href="{{ url_for('delete_chapter', chapter_id=chapter.id) }}" onclick="return confirm('Are you sure?')">Delete</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,4 +1,4 @@
-
+'''
 from app import db, bcrypt, app
 from app.models import User
 
@@ -11,7 +11,7 @@ with app.app_context():  #when working outside of regular request handling
         print("Admin created...")
 
 
-'''
+
 from app import app, db
 
 with app.app_context():
@@ -19,3 +19,8 @@ with app.app_context():
     print("Database created...")
 
 '''
+
+from app import app, db
+
+if __name__ == "__main__":
+    app.run(debug=True)
