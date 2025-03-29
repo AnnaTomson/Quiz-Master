@@ -6,23 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>User Login - Quiz Master</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 
 <body>
     <div class="container">
-        <h1>Welcome to Quiz Master</h1>
-        <h2>User Login</h2>
+        <!-- Navbar Section -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <a class="navbar-brand" href="#">Quiz Master</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('user_login') }}">User Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin_login') }}">Admin Login</a></li>
+            </ul>
+            </div>
+        </nav>
+        <h1>User</h1>
 
         <!-- Display error message if any -->
-        {% if error %}
-        <div class="error-message">
-            {{ error }}
-        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
         {% endif %}
+        {% endwith %}
+
 
         <!-- Login Form -->
         <form method="POST" action="{{ url_for('user_login') }}">
-            <label for="username">Username or Email</label>
+            <label for="username">Username</label>
             <input type="text" id="username" name="username" required>
 
             <label for="password">Password</label>
@@ -56,7 +70,7 @@
 
         h1, h2 {
             text-align: center;
-            color: #007bff;
+            color: #333;
         }
 
         label {

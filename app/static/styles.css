@@ -1,0 +1,18 @@
+/* static/css/style.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+  }
+  
+  .container {
+    max-width: 800px;
+  }
+  
+  h1 {
+    color: #343a40;
+  }
+  
+  footer {
+    margin-top: 50px;
+  }
+  

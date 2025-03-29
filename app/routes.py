@@ -1,10 +1,12 @@
 from app import app, db, bcrypt
-from flask import render_template, redirect, flash, url_for, request
+from flask import render_template, redirect, flash, url_for, request, session
 from app.models import User, Subject, Chapter
-from app.forms import SubjectForm, ChapterForm, RegistrationForm, LoginForm
+from app.forms import SubjectForm, ChapterForm, RegistrationForm
 from flask_login import login_user, logout_user, login_required, LoginManager
+from flask_bcrypt import Bcrypt
 
 login_manager = LoginManager(app)
+bcrypt = Bcrypt(app)
 login_manager.login_view = 'admin_login' #to specify route for unauthenticated users
 
 @login_manager.user_loader
@@ -15,18 +17,19 @@ def load_user(user_id):
 # Admin login & Home page
 
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
 
 @app.route('/admin/login', methods = ['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        username = request.form('username')
-        password = request.form('password')
-        user = User.query.filter_by(username=username, is_admin = True).first()
+        username = request.form['username']
+        password = request.form['password']
+        admin = User.query.filter_by(username=username, is_admin = True).first()
 
-        if user and user.is_admin and bcrypt.check_password_hash(user.password, password):
-            login_user(user)
+        if admin and bcrypt.check_password_hash(admin.password, password):
+            session['admin_id'] = admin.id
+            session['username'] = admin.username
             flash('Welcome Admin!!!', 'success')
             return redirect(url_for('admin_dashboard'))
         
@@ -154,38 +157,25 @@ def delete_chapter(id):
 #REGISTER
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method=='POST':
-        username = request.form['username']
-        email=request.form['email']
-        fullname = request.form['fullname']
-        qualification = request.form['qualification']
-        dob = request.form['dob']
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        hash_pswd = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        new_user = User(
+            username=form.username.data,
+            email=form.email.data,
+            password=hash_pswd,
+            fullname=form.fullname.data,
+            dob=form.dob.data,
+            qualification=form.qualification.data
+        )
 
-        if password != confirm_password:
-            flash('Passwords do not match. Try Again!', 'danger')
-            return redirect(url_for('register'))
+        db.session.add(new_user)
+        db.session.commit()
 
-        elif User.query.filter_by(username=username).first():
-            flash('Username already exists. Try a different one!', 'danger')
-            return redirect(url_for('register'))
-        
-        elif User.query.filter_by(email=email).first():
-            flash('Email is already registered! Please login', 'warning')
-            return redirect(url_for('user_login'))
+        flash('Registered successfully! Please Log in!!!', 'success')
+        return redirect(url_for('user_login'))
 
-        else:
-            hash_pswd = bcrypt.generate_password_hash(password).decode('utf-8')
-            new_user = User(username=username, email=email, password=hash_pswd, fullname=fullname, dob=dob, qualification=qualification)
-
-            db.session.add(new_user)
-            db.session.commit()
-
-            flash('Registered successfully! Please Log in!!!', 'success')
-            return redirect(url_for('user_login'))
-
-    return render_template('register.html')
+    return render_template('register.html', form=form)
 
 
 #user login
@@ -195,10 +185,17 @@ def user_login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        if user and bcrypt.check_password_hash(user.password, password):
-            login_user(user)
-            flash(f'Welcome, {user.fullname}!', 'success')
+
+        if user is None:
+            flash('User not registered. Please register first.', 'danger')
+            return redirect(url_for('user_login'))
+
+        if bcrypt.check_password_hash(user.password, password):
+            session['user_logged_in'] = True
+            session['username'] = user.username
+            flash('Login successful!', 'success')
             return redirect(url_for('user_dashboard'))
+
         else:
             flash('Invalid username or password. Please try again.', 'danger')
             return redirect(url_for('user_login'))
