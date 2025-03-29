@@ -5,7 +5,7 @@ from app.models import User
 
 class SubjectForm(FlaskForm):
     name = StringField('Subject Name', validators=[DataRequired()])
-    description = TextAreaField('Description')
+    description = TextAreaField('Description', validators=[DataRequired()])
     submit = SubmitField('Save')
 
 class ChapterForm(FlaskForm):

@@ -1,13 +1,14 @@
 from app import app, db, bcrypt
 from flask import render_template, redirect, flash, url_for, request, session
-from app.models import User, Subject, Chapter
+from app.models import User, Subject, Chapter, Quiz
 from app.forms import SubjectForm, ChapterForm, RegistrationForm
-from flask_login import login_user, logout_user, login_required, LoginManager
+from flask_login import login_user, logout_user, login_required, LoginManager, current_user
 from flask_bcrypt import Bcrypt
 
 login_manager = LoginManager(app)
 bcrypt = Bcrypt(app)
 login_manager.login_view = 'admin_login' #to specify route for unauthenticated users
+login_manager.login_message_category='danger'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -28,8 +29,7 @@ def admin_login():
         admin = User.query.filter_by(username=username, is_admin = True).first()
 
         if admin and bcrypt.check_password_hash(admin.password, password):
-            session['admin_id'] = admin.id
-            session['username'] = admin.username
+            login_user(admin)
             flash('Welcome Admin!!!', 'success')
             return redirect(url_for('admin_dashboard'))
         
@@ -38,14 +38,21 @@ def admin_login():
             return redirect(url_for('admin_login'))
     return render_template('admin_login.html')
 
-#creating admin dashboard
+#admin dashboard
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
     if not current_user.is_admin:
         flash('Unauthorised Access!', 'danger')
         return redirect(url_for('admin_login'))
-    return render_template('admin/dashboard.html')
+
+    subjects = Subject.query.all()
+    total_subjects = Subject.query.count()
+    total_chapters = Chapter.query.count()
+    total_quizzes = Quiz.query.count()
+    total_users = User.query.count()
+    return render_template('admin_dashboard.html', subjects=subjects, total_subjects=total_subjects, total_chapters=total_chapters, total_quizzes=total_quizzes, total_users=total_users)
+
 
 
 @app.route('/admin/logout')
@@ -75,33 +82,28 @@ def create_subject(id):
         subject.description = form.description.data
         db.session.commit()
         flash('Subject updated successfully!!!', 'success')
-        return redirect(url_for('view_subjects'))
-    return render_template('create_subject.html', form=form)
+        return redirect(url_for('admin_dashboard'))
 
 #edit subject
 @app.route('/admin/subjects/edit/<int:sub_id>', methods=['GET', 'POST'])
 @login_required
-def edit_subject(id):
-    subject = Subject.query.get_or_404(id)
-    form = SubjectForm(obj=subject)
-    if form.validate_on_submit():
-        subject.name = form.name.data
-        subject.description = form.description.data
-        db.session.commit()
-        flash('Updated subject successfully!!!', 'success')
-        return redirect(url_for('view_subjects'))
-    return render_template('create_subject.html', form=form)
-
+def edit_subject(sub_id):
+    subject = Subject.query.get_or_404(sub_id)
+    subject.name = request.form.get('name')
+    subject.description = request.form.get('description')
+    db.session.commit()
+    flash('Subject updated successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
 
 #delete subject
-@app.route('/admin/subjects/delete/<int:id>', methods=['POST'])
+@app.route('/admin/subjects/delete/<int:sub_id>', methods=['POST'])
 @login_required
-def delete_subject(id):
-    subject = Subject.query.get_or_404(id)
+def delete_subject(sub_id):
+    subject = Subject.query.get_or_404(sub_id)
     db.session.delete(subject)
-    de.session.commit()
-    flash('Subject deleted successfully!!!', 'success')
-    return redirect(url_for('vew_subjects'))
+    db.session.commit()
+    flash('Subject deleted successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
 
 
 # MANAGING CHAPTERS
@@ -112,46 +114,48 @@ def view_chapters(sub_id):
     chapters = Chapter.query.filter_by(sub_id=sub_id).all()
     return render_template('view_chapters.html', chapters=chapters, subject=subject)
 
-# create chapter
-@app.route('/admin/chapters/new/<int:sub_id>', methods=['GET', 'POST'])
+# add chapter
+@app.route('/admin/chapter/new/<int:sub_id>', methods=['GET', 'POST'])
 @login_required
-def create_chapter(sub_id):
-    form = ChapterForm()
-    form.sub_id.data = sub_id
-    if form.validate_on_submit():
-        chapter = Chapter(name=form.name.data, description = form.description.data, sub_id = sub_id)
-        db.session.add(chapter)
+def add_chapter(subject_id):
+    chapter_name = request.form.get('name')
+    chapter_description = request.form.get('description')
+    
+    if chapter_name:
+        new_chapter = Chapter(name=chapter_name, description=chapter_description, subject_id=subject_id)
+        db.session.add(new_chapter)
         db.session.commit()
-        flash('Created chapter successfully!!!', 'success')
-        return redirect(url_for('view_chapters', sub_id= sub_id))
-    return render_template('create_chapter.html', form=form)
+        flash('Chapter added successfully!', 'success')
+    else:
+        flash('Chapter name is required.', 'error')
+
+    return redirect(url_for('admin_dashboard'))
+
 
 
 # edit chapter
-@app.route('/admin/chapters/edit/<int:sub_id>', methods=['GET', 'POST'])
+@app.route('/admin/chapter/edit/<int:chapter_id>', methods=['GET', 'POST'])
 @login_required
-def edit_chapter(sub_id):
-    chapter = Chapter.query.get_or_404(id)
-    form = ChapterForm(obj=chapter)
-    if form.validate_on_submit():
-        chapter.name = form.name.data
-        chapter.description = form.description.data
+def edit_chapter(chapter_id):
+    chapter = Chapter.query.get_or_404(chapter_id)
+    if request.method == 'POST':
+        chapter.name = request.form['name']
+        chapter.description = request.form['description']
         db.session.commit()
-        flash('Updated chapter successfully!!!', 'success')
-        return redirect(url_for('view_chapters', sub_id= chapter.sub_id))
-    return render_template('create_chapter.html', form=form)
+        flash('Chapter updated successfully!', 'success')
+        return redirect(url_for('quiz_management'))
+    return render_template('edit_chapter.html', chapter=chapter)
 
 
 # delete chapter
-@app.route('/admin/chapters/delete/<int:id>', methods=['POST'])
+@app.route('/admin/chapter/delete/<int:chapter_id>', methods=['POST'])
 @login_required
-def delete_chapter(id):
-    chapter = Chapter.query.get_or_404(id)
-    sub_id = chapter.sub_id
+def delete_chapter(chapter_id):
+    chapter = Chapter.query.get_or_404(chapter_id)
     db.session.delete(chapter)
-    de.session.commit()
-    flash('Deleted Chapter successfully!!!', 'success')
-    return redirect(url_for('vew_chapters', sub_id=sub_id))
+    db.session.commit()
+    flash('Chapter deleted successfully!', 'success')
+    return redirect(url_for('quiz_management'))
 
 
 #REGISTER
@@ -202,21 +206,82 @@ def user_login():
     return render_template('user_login.html')
 
 
-'''@app.route('/user_login', methods=['GET', 'POST'])
-def user_login():
+#manage users
+@app.route('/admin/manage_users')
+@login_required
+def manage_users():
+    if not current_user.is_admin:
+        flash('Unauthorized Access!', 'danger')
+        return redirect(url_for('admin_login'))
+
+    users = User.query.all()
+    return render_template('admin/view_users.html', users=users)
+
+
+#add subject
+@app.route('/admin/add-subject', methods=['POST'])
+def add_subject():
+    name = request.form.get('name')
+    description = request.form.get('description')
+    #chapter_count = int(request.form.get('chapter_count'))
+    #Subject.append({"name": name, "chapter_count": chapter_count})
+    new_subject = Subject(name=name)
+    db.session.add(new_subject)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+
+#logout
+@app.route('/logout')
+def logout():
+    return redirect(url_for('admin_login'))
+
+#quiz management
+@app.route('/quiz-management')
+def quiz_management():
+    subjects = Subject.query.all()
+    return render_template('quiz_management.html', subjects=subjects)
+
+
+#add quiz
+@app.route('/add-quiz/<int:chapter_id>', methods=['GET', 'POST'])
+def add_quiz(chapter_id):
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        date_of_quiz = request.form.get('date_of_quiz')
+        time_duration = int(request.form.get('time_duration'))
+        remarks = request.form.get('remarks')
 
-        user = User.query.filter_by(username=username).first()
+        new_quiz = Quiz(chapter_id=chapter_id, date_of_quiz=date_of_quiz, time_duration=time_duration, remarks=remarks)
+        db.session.add(new_quiz)
+        db.session.commit()
+        flash('Quiz added successfully!', 'success')
+        return redirect(url_for('quiz_management'))
 
-        if user and bcrypt.check_password_hash(user.password, password):
-            session['user_id'] = user.id
-            session['username'] = user.username
-            flash(f'Welcome, {user.fullname}!', 'success')
-            return redirect(url_for('user_dashboard'))
-        else:
-            flash('Invalid username or password. Please try again.', 'danger')
-            return redirect(url_for('user_login'))
+    return render_template('add_quiz.html', chapter_id=chapter_id)
 
-    return render_template('user_login.html')'''
+
+#edit quiz
+@app.route('/edit-quiz/<int:quiz_id>', methods=['GET', 'POST'])
+def edit_quiz(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+
+    if request.method == 'POST':
+        quiz.date_of_quiz = request.form.get('date_of_quiz')
+        quiz.time_duration = int(request.form.get('time_duration'))
+        quiz.remarks = request.form.get('remarks')
+
+        db.session.commit()
+        flash('Quiz updated successfully!', 'success')
+        return redirect(url_for('quiz_management'))
+
+    return render_template('edit_quiz.html', quiz=quiz)
+
+
+#delete quiz
+@app.route('/delete-quiz/<int:quiz_id>', methods=['POST'])
+def delete_quiz(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    db.session.delete(quiz)
+    db.session.commit()
+    flash('Quiz deleted successfully!', 'success')
+    return redirect(url_for('quiz_management'))

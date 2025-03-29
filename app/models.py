@@ -22,14 +22,14 @@ class Subject(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(100), unique = True, nullable = False)
     description = db.Column(db.Text)
-    chapters = db.relationship('Chapter', backref = 'subject', lazy = True)  #lazy=True => lazy='select' (how SQLAlchemy should load the related objects)
+    chapters = db.relationship('Chapter', backref = 'subject', cascade = "all, delete-orphan")  #lazy=True => lazy='select' (how SQLAlchemy should load the related objects)
 
 class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(100), nullable = False)
     description = db.Column(db.Text)
     sub_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable = False)
-    quizes = db.relationship('Quiz', backref = 'chapter', lazy=True)
+    quizzes = db.relationship('Quiz', backref = 'chapter', lazy=True)
 
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key = True)

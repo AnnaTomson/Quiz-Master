@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{% if subject %}Edit Subject{% else %}Create New Subject{% endif %}</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+        {{ form.name.label }} {{ form.name }}
+    </div>
+    <div>
+        {{ form.description.label }} {{ form.description }}
+    </div>
+    <button type="submit">Save</button>
+</form>
+{% endblock %}

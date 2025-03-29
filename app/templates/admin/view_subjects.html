@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Subjects</h1>
+<a href="{{ url_for('create_subject') }}">Create New Subject</a>
+<ul>
+    {% for subject in subjects %}
+    <li>
+        {{ subject.name }} - {{ subject.description }}
+        <a href="{{ url_for('edit_subject', id=subject.id) }}">Edit</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
