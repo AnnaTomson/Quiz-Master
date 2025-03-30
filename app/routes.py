@@ -100,9 +100,15 @@ def edit_subject(sub_id):
 @login_required
 def delete_subject(sub_id):
     subject = Subject.query.get_or_404(sub_id)
-    db.session.delete(subject)
-    db.session.commit()
-    flash('Subject deleted successfully!', 'success')
+
+    try:
+        db.session.delete(subject)
+        db.session.commit()
+        flash('Subject deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {e}', 'error')
+
     return redirect(url_for('admin_dashboard'))
 
 
@@ -117,18 +123,19 @@ def view_chapters(sub_id):
 # add chapter
 @app.route('/admin/chapter/new/<int:sub_id>', methods=['GET', 'POST'])
 @login_required
-def add_chapter(subject_id):
-    chapter_name = request.form.get('name')
-    chapter_description = request.form.get('description')
+def add_chapter(sub_id):
+    name = request.form.get('name')
+    description = request.form.get('description')
     
-    if chapter_name:
-        new_chapter = Chapter(name=chapter_name, description=chapter_description, subject_id=subject_id)
-        db.session.add(new_chapter)
-        db.session.commit()
-        flash('Chapter added successfully!', 'success')
-    else:
+    if not name:
         flash('Chapter name is required.', 'error')
+        return redirect(url_for('admin_dashboard'))
 
+    new_chapter = Chapter(name=name, description=description, sub_id=sub_id)
+    db.session.add(new_chapter)
+    db.session.commit()
+
+    flash('Chapter added successfully!', 'success')
     return redirect(url_for('admin_dashboard'))
 
 
@@ -245,19 +252,32 @@ def quiz_management():
 
 #add quiz
 @app.route('/add-quiz/<int:chapter_id>', methods=['GET', 'POST'])
-def add_quiz(chapter_id):
-    if request.method == 'POST':
-        date_of_quiz = request.form.get('date_of_quiz')
-        time_duration = int(request.form.get('time_duration'))
-        remarks = request.form.get('remarks')
+@login_required
+def add_quiz():
+    chapter_id = request.form.get('chapter_id')
+    date_of_quiz = request.form.get('date_of_quiz')
+    time_duration = request.form.get('time_duration')
+    remarks = request.form.get('remarks')
 
-        new_quiz = Quiz(chapter_id=chapter_id, date_of_quiz=date_of_quiz, time_duration=time_duration, remarks=remarks)
+    try:
+        # Convert date string to date object
+        quiz_date = datetime.strptime(date_of_quiz, '%Y-%m-%d').date()
+
+        new_quiz = Quiz(
+            chapter_id=chapter_id,
+            date_of_quiz=quiz_date,
+            time_duration=int(time_duration),
+            remarks=remarks
+        )
         db.session.add(new_quiz)
         db.session.commit()
         flash('Quiz added successfully!', 'success')
-        return redirect(url_for('quiz_management'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {e}', 'error')
 
-    return render_template('add_quiz.html', chapter_id=chapter_id)
+    return redirect(url_for('quiz_management'))
+
 
 
 #edit quiz
@@ -285,3 +305,6 @@ def delete_quiz(quiz_id):
     db.session.commit()
     flash('Quiz deleted successfully!', 'success')
     return redirect(url_for('quiz_management'))
+
+
+#user dashboard
