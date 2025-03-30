@@ -251,33 +251,52 @@ def quiz_management():
 
 
 #add quiz
-@app.route('/add-quiz/<int:chapter_id>', methods=['GET', 'POST'])
+@app.route('/add_quiz', methods=['GET', 'POST'])
 @login_required
 def add_quiz():
-    chapter_id = request.form.get('chapter_id')
-    date_of_quiz = request.form.get('date_of_quiz')
-    time_duration = request.form.get('time_duration')
-    remarks = request.form.get('remarks')
+    if request.method == 'POST':
+        try:
+            chapter_id = request.form.get('chapter_id')
+            date_of_quiz = request.form.get('date_of_quiz')
+            time_duration = request.form.get('time_duration')
+            remarks = request.form.get('remarks', '')
 
-    try:
-        # Convert date string to date object
-        quiz_date = datetime.strptime(date_of_quiz, '%Y-%m-%d').date()
+            # Validate inputs
+            if not (chapter_id and date_of_quiz and time_duration):
+                flash('Please fill out all fields.', 'danger')
+                return redirect(url_for('quiz_management'))
 
-        new_quiz = Quiz(
-            chapter_id=chapter_id,
-            date_of_quiz=quiz_date,
-            time_duration=int(time_duration),
-            remarks=remarks
-        )
-        db.session.add(new_quiz)
-        db.session.commit()
-        flash('Quiz added successfully!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error: {e}', 'error')
+            # Convert date to the correct format
+            date_of_quiz = datetime.strptime(date_of_quiz, '%Y-%m-%d').date()
+            time_duration = int(time_duration)
 
-    return redirect(url_for('quiz_management'))
+            # Verify Chapter exists
+            chapter = Chapter.query.get(chapter_id)
+            if not chapter:
+                flash('Invalid chapter selection.', 'danger')
+                return redirect(url_for('quiz_management'))
 
+            # Create and store the quiz
+            new_quiz = Quiz(
+                chapter_id=chapter_id,
+                date_of_quiz=date_of_quiz,
+                time_duration=time_duration,
+                remarks=remarks
+            )
+
+            db.session.add(new_quiz)
+            db.session.commit()
+            flash('Quiz added successfully!', 'success')
+            return redirect(url_for('quiz_management'))
+
+        except ValueError as e:
+            flash(f'Invalid input: {e}', 'danger')
+        except Exception as e:
+            flash(f'Error occurred: {e}', 'danger')
+
+    # Load chapters for selection in the form
+    chapters = Chapter.query.all()
+    return render_template('add_quiz.html', chapters=chapters)
 
 
 #edit quiz
@@ -308,3 +327,65 @@ def delete_quiz(quiz_id):
 
 
 #user dashboard
+@app.route('/user_dashboard')
+@login_required
+def user_dashboard():
+    quizzes = db.session.query(Quiz, Chapter).join(Chapter).all()
+    return render_template('user_dashboard.html', quizzes=quizzes)
+
+
+#my quizzes
+@app.route('/my_quizzes')
+@login_required
+def my_quizzes():
+    quizzes = Quiz.query.join(Chapter).join(Subject).all()
+    return render_template('my_quizzes.html', quizzes=quizzes)
+
+
+
+#profile
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user)
+
+
+#edit profile
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        new_username = request.form['username']
+        new_email = request.form['email']
+
+        if User.query.filter(User.username == new_username, User.id != current_user.id).first():
+            flash('Username already taken. Choose a different one.', 'danger')
+        elif User.query.filter(User.email == new_email, User.id != current_user.id).first():
+            flash('Email already registered. Use a different email.', 'danger')
+        else:
+            current_user.username = new_username
+            current_user.email = new_email
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('profile'))
+
+    return render_template('edit_profile.html', user=current_user)
+
+
+#logout
+@app.route('/user_logout')
+def user_logout():
+    session.clear()
+    return redirect(url_for('user_login'))
+
+
+#start quiz
+@app.route('/start_quiz/<int:quiz_id>', methods=['GET'])
+def start_quiz(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    return render_template('start_quiz.html', quiz=quiz)
+
+
+
+
+
