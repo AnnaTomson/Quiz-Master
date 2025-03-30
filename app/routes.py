@@ -1,6 +1,6 @@
 from app import app, db, bcrypt
 from flask import render_template, redirect, flash, url_for, request, session
-from app.models import User, Subject, Chapter, Quiz, Questions
+from app.models import User, Subject, Chapter, Quiz, Questions, QuizResult
 from app.forms import SubjectForm, ChapterForm, RegistrationForm
 from flask_login import login_user, logout_user, login_required, LoginManager, current_user
 from flask_bcrypt import Bcrypt
@@ -450,3 +450,57 @@ def view_questions(quiz_id):
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
+
+
+@app.route('/submit_quiz/<int:quiz_id>', methods=['POST'])
+@login_required
+def submit_quiz(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = quiz.questions  # Assuming relationship is defined
+    total_questions = len(questions)
+    correct_answers = 0
+
+    # Loop over each question and compare user answer to correct answer.
+    for question in questions:
+        # Form field is expected as "question_<question.id>"
+        user_answer = request.form.get(f"question_{question.id}")
+        if user_answer and user_answer.strip() == question.correct_option:
+            correct_answers += 1
+
+    score = correct_answers
+
+    # Create a new QuizResult record for the current user
+    new_result = QuizResult(
+        user_id=current_user.id,
+        quiz_id=quiz.id,
+        score=score,
+        total_questions=total_questions
+    )
+
+    try:
+        db.session.add(new_result)
+        db.session.commit()
+        flash('Quiz submitted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error saving quiz result: {e}', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    # Redirect to a page that shows the result. For example, "view_result".
+    return redirect(url_for('view_result_by_quiz', quiz_id=quiz_id))
+
+
+#view quiz result
+@app.route('/view_result/<int:quiz_id>', endpoint='view_result_by_quiz')
+@login_required
+def view_result_by_quiz(quiz_id):
+    result = QuizResult.query.filter_by(quiz_id=quiz_id, user_id=current_user.id)\
+                             .order_by(QuizResult.attempt_date.desc()).first()
+    if not result:
+        flash('You have not taken this quiz yet.', 'warning')
+        return redirect(url_for('user_dashboard'))
+    return render_template('view_result.html', result=result)
+
+
+
+
