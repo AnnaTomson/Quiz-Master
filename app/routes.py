@@ -1,6 +1,6 @@
 from app import app, db, bcrypt
 from flask import render_template, redirect, flash, url_for, request, session
-from app.models import User, Subject, Chapter, Quiz
+from app.models import User, Subject, Chapter, Quiz, Questions
 from app.forms import SubjectForm, ChapterForm, RegistrationForm
 from flask_login import login_user, logout_user, login_required, LoginManager, current_user
 from flask_bcrypt import Bcrypt
@@ -252,49 +252,52 @@ def quiz_management():
 
 #add quiz
 @app.route('/add_quiz', methods=['GET', 'POST'])
-@login_required
+@login_required  # Ensure appropriate access for admin
 def add_quiz():
     if request.method == 'POST':
         try:
+            # Retrieve data from the form
             chapter_id = request.form.get('chapter_id')
-            date_of_quiz = request.form.get('date_of_quiz')
+            date_of_quiz_str = request.form.get('date_of_quiz')
             time_duration = request.form.get('time_duration')
             remarks = request.form.get('remarks', '')
 
-            # Validate inputs
-            if not (chapter_id and date_of_quiz and time_duration):
-                flash('Please fill out all fields.', 'danger')
-                return redirect(url_for('quiz_management'))
+            # Validate that required fields are present
+            if not (chapter_id and date_of_quiz_str and time_duration):
+                flash('Please fill out all required fields.', 'danger')
+                return redirect(url_for('add_quiz'))
 
-            # Convert date to the correct format
-            date_of_quiz = datetime.strptime(date_of_quiz, '%Y-%m-%d').date()
+            # Convert values to proper types
+            chapter_id = int(chapter_id)
+            # Convert date string to date object (ensure format is YYYY-MM-DD)
+            date_of_quiz = datetime.strptime(date_of_quiz_str, '%Y-%m-%d').date()
             time_duration = int(time_duration)
 
-            # Verify Chapter exists
+            # Optionally, check that the chapter exists:
             chapter = Chapter.query.get(chapter_id)
             if not chapter:
-                flash('Invalid chapter selection.', 'danger')
-                return redirect(url_for('quiz_management'))
+                flash('Invalid chapter selected.', 'danger')
+                return redirect(url_for('add_quiz'))
 
-            # Create and store the quiz
+            # Create new Quiz object
             new_quiz = Quiz(
                 chapter_id=chapter_id,
                 date_of_quiz=date_of_quiz,
                 time_duration=time_duration,
                 remarks=remarks
             )
-
             db.session.add(new_quiz)
             db.session.commit()
             flash('Quiz added successfully!', 'success')
             return redirect(url_for('quiz_management'))
-
-        except ValueError as e:
-            flash(f'Invalid input: {e}', 'danger')
         except Exception as e:
-            flash(f'Error occurred: {e}', 'danger')
+            db.session.rollback()
+            flash(f'Error adding quiz: {e}', 'danger')
+            # Log the error to your console for debugging
+            print("Error:", e)
+            return redirect(url_for('add_quiz'))
 
-    # Load chapters for selection in the form
+    # For GET request, pass chapters for the dropdown
     chapters = Chapter.query.all()
     return render_template('add_quiz.html', chapters=chapters)
 
@@ -380,12 +383,70 @@ def user_logout():
 
 
 #start quiz
-@app.route('/start_quiz/<int:quiz_id>', methods=['GET'])
+@app.route('/start_quiz/<int:quiz_id>')
+@login_required  
 def start_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-    return render_template('start_quiz.html', quiz=quiz)
+    questions = quiz.questions  
+    return render_template('start_quiz.html', quiz=quiz, questions=questions)
+
+
+#add question
+@app.route('/admin/add_question/<int:quiz_id>', methods=['GET', 'POST'])
+@login_required  # Ensure admin-only access if needed
+def add_question(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    
+    if request.method == 'POST':
+        # Retrieve form data
+        question_statement = request.form.get('question_statement')
+        option1 = request.form.get('option1')
+        option2 = request.form.get('option2')
+        option3 = request.form.get('option3')
+        option4 = request.form.get('option4')
+        correct_option = request.form.get('correct_option', '').strip()
+
+        # Validate input
+        if not all([question_statement, option1, option2, option3, option4, correct_option]):
+            flash('All fields are required.', 'danger')
+            return redirect(url_for('add_question', quiz_id=quiz_id))
+        if correct_option not in ['1', '2', '3', '4']:
+            flash('Correct option must be 1, 2, 3, or 4.', 'danger')
+            return redirect(url_for('add_question', quiz_id=quiz_id))
+
+        # Create new question
+        new_question = Questions(
+            quiz_id=quiz_id,
+            question_statement=question_statement,
+            option1=option1,
+            option2=option2,
+            option3=option3,
+            option4=option4,
+            correct_option=correct_option
+        )
+        try:
+            db.session.add(new_question)
+            db.session.commit()
+            flash('Question added successfully!', 'success')
+            return redirect(url_for('view_questions', quiz_id=quiz_id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding question: {e}', 'danger')
+            return redirect(url_for('add_question', quiz_id=quiz_id))
+    
+    return render_template('add_question.html', quiz=quiz)
 
 
 
+#view question
+@app.route('/admin/view_questions/<int:quiz_id>')
+@login_required
+def view_questions(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = quiz.questions  # via relationship
+    return render_template('view_questions.html', quiz=quiz, questions=questions)
 
 
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
