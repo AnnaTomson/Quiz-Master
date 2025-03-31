@@ -53,6 +53,18 @@ flask run
 
 Open `http://127.0.0.1:5000` in your browser.
 
+## Usage
+**Admin Login:**
+- Navigate to /admin/login using your credentials.
+- Manage subjects, chapters, quizzes, and questions.
+
+**User Login:**
+- Navigate to /login.
+- View and attempt quizzes from your dashboard.
+
+**View Scores:**
+- After completing a quiz, visit the View Score section from the dashboard.
+
 ## Database Design
 - **User Table:** Stores user details and roles (Admin/User).
 - **Subject Table:** Contains subject names and descriptions.
@@ -72,3 +84,8 @@ Open `http://127.0.0.1:5000` in your browser.
 - `/submit_quiz/<quiz_id>` → Submit Quiz and Calculate Score
 - `/view_result/<quiz_id>` → View Quiz Result
 
+## Tech Stack
+Backend: Flask (Python)
+Frontend: Jinja2, HTML, CSS, Bootstrap
+Database: SQLite
+Extensions: Flask-SQLAlchemy, Flask-WTF, Flask-Login, Flask-Bcrypt
