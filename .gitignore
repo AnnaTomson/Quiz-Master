@@ -1,0 +1,42 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.log
+
+# Virtual Environment
+venv/
+env/
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# SQLite Database
+*.sqlite3
+quizvista.db
+
+# Environment Variables
+.env
+*.env
+
+# Migrations
+migrations/
+
+# Cache Files
+.cache/
+*.bak
+
+# Logs
+logs/
+*.log
+
+# Flask Debug
+instance/
+
+# Python Packaging
+*.egg
+*.egg-info/
+dist/
+build/
